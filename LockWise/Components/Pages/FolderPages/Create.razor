@@ -1,0 +1,44 @@
+﻿@page "/folders/create"
+@using Microsoft.EntityFrameworkCore
+@using LockWise.Data.Models
+@inject IDbContextFactory<LockWise.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Folder</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Folder" OnValidSubmit="AddFolder" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="Folder.Name" class="form-control" /> 
+                <ValidationMessage For="() => Folder.Name" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/folders">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Folder Folder { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddFolder()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Folder.Add(Folder);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/folders");
+    }
+}
