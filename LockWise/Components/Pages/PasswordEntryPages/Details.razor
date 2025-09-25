@@ -1,0 +1,56 @@
+﻿@page "/passwordentries/details"
+@using Microsoft.EntityFrameworkCore
+@using LockWise.Data.Models
+@inject IDbContextFactory<LockWise.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h2>PasswordEntry</h2>
+    <hr />
+    @if (passwordentry is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@passwordentry.Name</dd>
+            <dt class="col-sm-2">UserName</dt>
+            <dd class="col-sm-10">@passwordentry.UserName</dd>
+            <dt class="col-sm-2">EncryptedPassword</dt>
+            <dd class="col-sm-10">@passwordentry.EncryptedPassword</dd>
+            <dt class="col-sm-2">Website</dt>
+            <dd class="col-sm-10">@passwordentry.Website</dd>
+            <dt class="col-sm-2">UserId</dt>
+            <dd class="col-sm-10">@passwordentry.UserId</dd>
+            <dt class="col-sm-2">FolderId</dt>
+            <dd class="col-sm-10">@passwordentry.FolderId</dd>
+        </dl>
+        <div>
+            <a href="@($"/passwordentries/edit?id={passwordentry.Id}")">Edit</a> |
+            <a href="@($"/passwordentries")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    private PasswordEntry? passwordentry;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        passwordentry = await context.PasswordEntry.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (passwordentry is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}
