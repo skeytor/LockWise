@@ -1,11 +1,12 @@
 ﻿@page "/folders/create"
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using LockWise.Data.Models
 @inject IDbContextFactory<LockWise.Data.ApplicationDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize]
 
 <PageTitle>Create</PageTitle>
-
 <h1>Create</h1>
 
 <h2>Folder</h2>

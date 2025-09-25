@@ -3,16 +3,11 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using LockWise.Data.Models
 @using LockWise.Data
+
 @implements IAsyncDisposable
 @inject IDbContextFactory<LockWise.Data.ApplicationDbContext> DbFactory
 
 <PageTitle>Folders</PageTitle>
-
-<h1>Folders List</h1>
-
-<p>
-    <a href="folders/create">Create New</a>
-</p>
 
 <QuickGrid Class="table" Items="context.Folder">
     <PropertyColumn Property="folder => folder.Id" />
@@ -23,6 +18,7 @@
         <a href="@($"folders/delete?id={folder.Id}")">Delete</a>
     </TemplateColumn>
 </QuickGrid>
+
 
 @code {
     private ApplicationDbContext context = default!;

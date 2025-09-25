@@ -1,0 +1,41 @@
+﻿@page "/passwordentries"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using LockWise.Data.Models
+@using LockWise.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<LockWise.Data.ApplicationDbContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="passwordentries/create">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.PasswordEntry">
+    <PropertyColumn Property="passwordentry => passwordentry.Name" />
+    <PropertyColumn Property="passwordentry => passwordentry.UserName" />
+    <PropertyColumn Property="passwordentry => passwordentry.EncryptedPassword" Context="Password"/>
+    <PropertyColumn Property="passwordentry => passwordentry.Website" />
+    <PropertyColumn Property="passwordentry => passwordentry.Folder!.Name" />
+
+    <TemplateColumn Context="passwordentry">
+        <a href="@($"passwordentries/edit?id={passwordentry.Id}")">Edit</a> |
+        <a href="@($"passwordentries/details?id={passwordentry.Id}")">Details</a> |
+        <a href="@($"passwordentries/delete?id={passwordentry.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private ApplicationDbContext context = default!;
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+        context.PasswordEntry.Include(x => x.Folder).Load();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

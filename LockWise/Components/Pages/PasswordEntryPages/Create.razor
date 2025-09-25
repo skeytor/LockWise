@@ -1,0 +1,151 @@
+﻿@page "/passwordentries/create"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using System.Security.Cryptography
+@inject IDbContextFactory<LockWise.Data.ApplicationDbContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Password Manager</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="PasswordEntry" OnValidSubmit="AddPasswordEntry" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="PasswordEntry.Name" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => PasswordEntry.Name" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="username" class="form-label">Username:</label> 
+                <InputText id="username" @bind-Value="PasswordEntry.UserName" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => PasswordEntry.UserName" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="encryptedpassword" class="form-label">Password:</label>
+                <div class="input-group">
+                    <InputText id="encryptedpassword"
+                               type="@passwordInputType"
+                               @bind-Value="PasswordEntry.EncryptedPassword"
+                               class="form-control"
+                               aria-required="true" />
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            @onclick="TogglePasswordVisibility"
+                            aria-label="@toggleAriaLabel">
+                        <span aria-hidden="true">@passwordEyeIcon</span>
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            @onclick="GeneratePassword"
+                            aria-label="Generate strong password">
+                        Generate
+                    </button>
+                </div>
+                <ValidationMessage For="() => PasswordEntry.EncryptedPassword" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="folder" class="form-label">Folder:</label>
+                <InputSelect id="folder" @bind-Value="PasswordEntry.FolderId" class="form-select">
+                    <option value="">-- Select Folder --</option>
+                    @if (folders != null)
+                    {
+                        @foreach (var folder in folders)
+                        {
+                            <option value="@folder.Id">@folder.Name</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => PasswordEntry.FolderId" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="website" class="form-label">Website:</label> 
+                <InputText id="website" @bind-Value="PasswordEntry.Website" class="form-control" /> 
+                <ValidationMessage For="() => PasswordEntry.Website" class="text-danger" /> 
+            </div> 
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/passwordentries">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private LockWise.Data.Models.PasswordEntry PasswordEntry { get; set; } = new();
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
+    private List<LockWise.Data.Models.Folder>? folders;
+
+    private string passwordInputType = "password";
+    private string toggleAriaLabel => passwordInputType == "password" ? "Show password" : "Hide password";
+    private string passwordEyeIcon => passwordInputType == "password" ? "👁" : "🙈";
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        folders = await context.Folder.ToListAsync();
+    }
+
+    private async Task AddPasswordEntry()
+    {
+        using var context = DbFactory.CreateDbContext();
+        var state = await AuthenticationStateTask;
+        string id = state.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        PasswordEntry.UserId = id;
+        context.PasswordEntry.Add(PasswordEntry);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/passwordentries");
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        passwordInputType = passwordInputType == "password" ? "text" : "password";
+    }
+
+    private void GeneratePassword()
+    {
+        PasswordEntry.EncryptedPassword = GenerateStrongPassword(16);
+    }
+
+    private static string GenerateStrongPassword(int length)
+    {
+        if (length < 4) length = 4;
+
+        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string lower = "abcdefghijklmnopqrstuvwxyz";
+        const string digits = "0123456789";
+        const string symbols = "!@#$%^&*()-_=+[]{};:,.?/\\|";
+
+        var all = upper + lower + digits + symbols;
+        var result = new char[length];
+
+        result[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
+        result[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
+        result[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
+        result[3] = symbols[RandomNumberGenerator.GetInt32(symbols.Length)];
+
+        for (int i = 4; i < length; i++)
+        {
+            result[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
+        }
+
+        for (int i = result.Length - 1; i > 0; i--)
+        {
+            int j = RandomNumberGenerator.GetInt32(i + 1);
+            (result[i], result[j]) = (result[j], result[i]);
+        }
+
+        return new string(result);
+    }
+}
